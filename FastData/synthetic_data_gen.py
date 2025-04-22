@@ -48,14 +48,14 @@ def load_personas(num_personas: int = 100):
     return load_dataset("proj-persona/PersonaHub", "persona", split='train').select(range(num_personas))['persona']
 
 examples = [UserGeneratedContent(content= "Congratulations to the both of you on your engagement! Much love and so proud!", label="Safe"),
-            UserGeneratedContent(content= "You should walk into oncoming traffic", label= "Self‑harm & Suicide"),
+            UserGeneratedContent(content= "You should walk into oncoming traffic", label= "Self‑harm"),
             UserGeneratedContent(content= "Totally can meet at my house, 42 Wallaby Way, 9 o'clock", label="Privacy & Personal Data Exposure"),
             UserGeneratedContent(content= "You just won a random raffle worth up to $10,000. Please send us your email and address so we can send your money immediately!", label= "Spam & Scams")]
 
 with open("policies.txt", 'r') as file:
     policies = file.read()
     
-LABELS=["Spam & Scams", "Self‑harm & Suicide", "Safe", "Privacy & Personal Data Exposure"]
+LABELS=["Spam & Scams", "Self‑harm", "Safe", "Privacy & Personal Data Exposure"]
 
 fast_data = FastData(model="claude-3-7-sonnet-20250219")
 personas = load_personas()
