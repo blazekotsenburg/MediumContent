@@ -2,7 +2,7 @@
 
 This project demonstrates how to use [FastData](https://github.com/AnswerDotAI/fastdata), an open-source Python library, to generate synthetic user-generated content (UGC) for content moderation use cases using Anthropic’s Claude models.
 
-Whether you're building a fine-tuning dataset or prototyping a moderation classifier, synthetic data can help you quickly simulate real-world scenarios at scale—without the cost or risk of human-labeled examples.
+Whether you're building a fine-tuning dataset or prototyping a moderation classifier, synthetic data can help you quickly simulate real-world scenarios at scale—without the cost or risk of human-labeled examples. 
 
 ---
 
