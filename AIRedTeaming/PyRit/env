@@ -1,0 +1,9 @@
+####### DREADNODE ENV VARIABLES #######
+CRUCIBLE_API_KEY="<YOUR_CRUCIBLEAPI_KEY"
+CRUCIBLE_URL="https://platform.dreadnode.io"
+CHALLENGE_URL="https://bear4.platform.dreadnode.io"
+
+####### OPENAI ENV VARIABLES #######
+OPENAI_CHAT_MODEL="gpt-4o-mini-2024-07-18"
+OPENAI_CHAT_KEY="<YOUR_OPENAIAPI_KEY>"
+OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
