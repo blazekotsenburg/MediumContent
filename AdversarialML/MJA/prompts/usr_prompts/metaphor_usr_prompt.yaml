@@ -1,0 +1,4 @@
+parameters:
+  - sen_content
+prompt: |
+  Sensitive content: {sen_content}
