@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 from dataclasses import dataclass
 
 import transformers
-from transformers import CLIPTokenizer, CLIPTextModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import CLIPCLIP_PROCESSOR, CLIPTextModel
+from transformers import AutoModelForCausalLM, AutoCLIP_PROCESSOR
 import torch
 
 import random, hashlib, numpy as np
@@ -24,9 +24,9 @@ from common.orchestrator import Orchestrator
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 #Same backbone the paper used: ViT-L/14
-TOKENIZER = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
-TEXT_MODEL = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")#.to(DEVICE)
-TEXT_MODEL.eval()
+CLIP_PROCESSOR = CLIPCLIP_PROCESSOR.from_pretrained("openai/clip-vit-large-patch14")
+CLIP_MODEL = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")#.to(DEVICE)
+CLIP_MODEL.eval()
 
 @dataclass
 class APOResult:
@@ -59,7 +59,7 @@ usr_prompt_adversarial  = Prompt.load_from_file(file_path=PATH_ADV_USR_PROMPT)
 model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 # llama_3_8b = AutoModelForCausalLM.from_pretrained(model_id)
-# tokenizer = AutoTokenizer.from_pretrained(model_id)
+# CLIP_PROCESSOR = AutoCLIP_PROCESSOR.from_pretrained(model_id)
 
 # llama_3_8b=None
 # llama_3_8b = transformers.pipeline(
@@ -71,8 +71,8 @@ model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
 llama_3_8b = Orchestrator(model_id="meta-llama/Meta-Llama-3-8B-Instruct")
 
 # terminators = [
-#     llama_3_8b.tokenizer.eos_token_id,
-#     llama_3_8b.tokenizer.convert_tokens_to_ids("<|eot_id|>")
+#     llama_3_8b.CLIP_PROCESSOR.eos_token_id,
+#     llama_3_8b.CLIP_PROCESSOR.convert_tokens_to_ids("<|eot_id|>")
 # ]
 
 def metaphors(x_sen: str, N: int) -> List[str]:
@@ -140,7 +140,7 @@ def embed(prompt: str, dim: int = 256) -> np.ndarray:
     Works with Hugging Face 'openai/clip-vit-large-patch14'.
     """
     # 1. Tokenise; returns a dict of tensors
-    tokens = TOKENIZER(
+    tokens = CLIP_PROCESSOR(
         prompt,
         truncation=True,
         padding="max_length",   # CLIP expects exactly 77 tokens
@@ -149,7 +149,7 @@ def embed(prompt: str, dim: int = 256) -> np.ndarray:
     ).to(DEVICE)
 
     # 2. Forward pass through CLIP text encoder
-    outputs = TEXT_MODEL(**tokens)
+    outputs = CLIP_MODEL(**tokens)
 
     # 3. Take the *pooled* text embedding (CLS token at position 0)
     text_emb = outputs.last_hidden_state[:, 0, :]   # shape [1, 768]
