@@ -2,6 +2,6 @@ parameters:
   - sen_content
   - metaphor
 prompt: |
-  Sensitive content: {sensitive_msg}
+  Sensitive content: {sen_content}
 
   Metaphor: {metaphor}

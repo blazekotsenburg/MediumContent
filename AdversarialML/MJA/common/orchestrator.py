@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import transformers
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -6,37 +7,72 @@ import torch
 
 @dataclass
 class Orchestrator:
+    model_id: str                       # required when you instantiate
+    device:   str = "cpu"               # "cuda" or "cpu"
 
-    _llm: transformers.Pipeline
+    # Internal objects created later; exclude from __init__ & repr
+    tokenizer: AutoTokenizer         = field(init=False, repr=False)
+    llm:        AutoModelForCausalLM = field(init=False, repr=False)
 
-    def __init__(self, model_id):
-        # self._llm = transformers.pipeline(
-        #                 "text-generation",
-        #                 model=model_id,
-        #                 # model_kwargs={"torch_dtype": torch.bfloat16},
-        #                 device_map="auto",
-        #             )
-        
-        # self._terminators = [
-        #                         self._llm.tokenizer.eos_token_id,
-        #                         self._llm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
-        #                     
+    def __post_init__(self):
+        # -- Tokenizer ----------------------------------------------------
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
 
-        self._llm = AutoModelForCausalLM.from_pretrained(model_id)
-        self._tokenizer = AutoTokenizer.from_pretrained(model_id)
-        
-    def invoke(self, messages: list[dict]) -> str:
-        # prompt = self._tokenizer.apply_chat_template(messages, tokenize=False)
-        inputs = self._tokenizer.apply_chat_template(messages, return_tensors="pt").to(self._llm.device)
-        outputs = self._llm.generate(inputs, max_length=1000)
+        # some Llama/Mistral checkpoints miss a pad token
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        print(outputs)
-        return outputs
-        # self._llm(
-        #     messages,
-        #     max_new_tokens=512,
-        #     eos_token_id=self._terminators,
-        #     do_sample=True,
-        #     temperature=0.7,
-        #     # top_p=0.9,
-        # )
+        # -- Model --------------------------------------------------------
+        self.llm = AutoModelForCausalLM.from_pretrained(
+            self.model_id,
+            torch_dtype=torch.float16 if "cuda" in self.device else torch.float32,
+            device_map={"": 0} if "cuda" in self.device else None
+        ).to(self.device)
+
+        # keep model & tokenizer in sync for padding
+        self.llm.config.pad_token_id = self.tokenizer.pad_token_id
+
+    def invoke(self,
+               messages: list[dict[str, str]],
+               device: str,
+               max_new_tokens: int = 128) -> str:
+        """
+        Parameters
+        ----------
+        messages : [{'role': ..., 'content': ...}, ...]
+        device   : "cuda" or "cpu"  (kept for backward-compat)
+        Returns
+        -------
+        str : the model's completion (plain text, JSON-safe)
+        """
+        device = device or self.device   # stay on the default if None
+
+        # -- Build prompt as *string* (good for logging / DALL·E)
+        prompt_str: str = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,               # keep TEXT
+            add_generation_prompt=True    # works for chat checkpoints
+        )
+
+        # -- Tokenise for generation (tensor IDs)
+        enc = self.tokenizer(
+            prompt_str,
+            return_tensors="pt",
+            padding=True
+        ).to(device)
+
+        # -- Generate (same call pattern you had)
+        out_ids = self.llm.generate(
+            enc["input_ids"],
+            max_new_tokens=max_new_tokens,
+            pad_token_id=self.tokenizer.pad_token_id
+        )
+
+        # -- Decode ONLY the new tokens (skip the prompt part)
+        resp_text = self.tokenizer.decode(
+            out_ids[0][enc["input_ids"].shape[1]:],
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True
+        ).strip()
+
+        return resp_text
