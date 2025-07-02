@@ -1,0 +1,10 @@
+parameters:
+  - sen_content
+  - metaphor
+  - artistic_context
+prompt: |
+  Sensitive content: {sen_content}
+
+  Metaphor: {metaphor}
+
+  Artistic context: {artistic_context}

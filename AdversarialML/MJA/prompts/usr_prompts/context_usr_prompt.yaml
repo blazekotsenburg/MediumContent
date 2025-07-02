@@ -1,0 +1,7 @@
+parameters:
+  - sen_content
+  - metaphor
+prompt: |
+  Sensitive content: {sen_content}
+
+  Metaphor: {metaphor}
